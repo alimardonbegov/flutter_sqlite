@@ -1,4 +1,5 @@
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../model/item.dart';
@@ -18,9 +19,9 @@ class ItemsDatabase {
   }
 
   Future<Database> _initDatabase(String filepath) async {
-    final dbPath = await getDatabasesPath();
+    final documentsDirectory = await getApplicationDocumentsDirectory();
     // тут может нужно поменять для винды
-    final path = join(dbPath, filepath);
+    final path = join(documentsDirectory.path, filepath);
     return await openDatabase(path, version: 1, onCreate: _createDB);
     //здесь можно обновить
   }
@@ -64,11 +65,31 @@ class ItemsDatabase {
     }
   }
 
-  Future<List<Item>> readAllNote(int id) async {
+  Future<List<Item>> readAllNote() async {
     final db = await instace.database; // ссылка на бд
     final orderBy = '${ItemsFields.time} ASC';
     final result = await db.query(tableItems, orderBy: orderBy);
     return result.map((json) => Item.fromJson(json)).toList();
+  }
+
+  Future<int> update(Item item) async {
+    final db = await instace.database;
+    return db.update(
+      tableItems,
+      item.toJson(),
+      where: '$ItemsFields.id} = ?',
+      whereArgs: [item.id],
+    );
+  }
+
+  Future<int> delete(int id) async {
+    final db = await instace.database;
+
+    return db.delete(
+      tableItems,
+      where: '$ItemsFields.id} = ?',
+      whereArgs: [id],
+    );
   }
 
   Future close() async {
